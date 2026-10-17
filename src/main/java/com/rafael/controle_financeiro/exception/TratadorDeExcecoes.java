@@ -35,4 +35,9 @@ public class TratadorDeExcecoes {
         ErroResposta erro = new ErroResposta(400, "Corpo da requisição inválido", List.of());
         return ResponseEntity.badRequest().body(erro);
     }
+    @ExceptionHandler(RegraDeNegocioException.class)
+    public ResponseEntity<ErroResposta> regraDeNegocio(RegraDeNegocioException ex) {
+        ErroResposta erro = new ErroResposta(400, ex.getMessage(), List.of());
+        return ResponseEntity.badRequest().body(erro);
+    }
 }
