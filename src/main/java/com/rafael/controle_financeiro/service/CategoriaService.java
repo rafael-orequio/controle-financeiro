@@ -3,8 +3,10 @@ package com.rafael.controle_financeiro.service;
 import com.rafael.controle_financeiro.dto.CategoriaRequest;
 import com.rafael.controle_financeiro.dto.CategoriaResponse;
 import com.rafael.controle_financeiro.exception.RecursoNaoEncontradoException;
+import com.rafael.controle_financeiro.exception.RegraDeNegocioException;
 import com.rafael.controle_financeiro.model.Categoria;
 import com.rafael.controle_financeiro.repository.CategoriaRepository;
+import com.rafael.controle_financeiro.repository.TransacaoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +16,11 @@ import java.util.List;
 public class CategoriaService {
 
     private final CategoriaRepository repository;
+    private final TransacaoRepository transacaoRepository;
 
-    public CategoriaService(CategoriaRepository repository) {
+    public CategoriaService(CategoriaRepository repository, TransacaoRepository transacaoRepository) {
         this.repository = repository;
+        this.transacaoRepository = transacaoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -47,7 +51,12 @@ public class CategoriaService {
 
     @Transactional
     public void remover(Long id) {
-        repository.delete(buscarEntidade(id));
+        Categoria categoria = buscarEntidade(id);
+        if (transacaoRepository.existsByCategoriaId(id)) {
+            throw new RegraDeNegocioException(
+                    "Não é possível remover a categoria: existem transações vinculadas a ela");
+        }
+        repository.delete(categoria);
     }
 
     private Categoria buscarEntidade(Long id) {

@@ -13,6 +13,8 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
     @Query("select t.tipo as tipo, sum(t.valor) as total from Transacao t group by t.tipo")
     List<TotalPorTipo> totaisPorTipo();
 
+    boolean existsByCategoriaId(Long categoriaId);
+
     interface TotalPorTipo {
         TipoTransacao getTipo();
 
