@@ -5,6 +5,8 @@ import com.rafael.controle_financeiro.dto.TransacaoResponse;
 import com.rafael.controle_financeiro.service.TransacaoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,29 +30,36 @@ public class TransacaoController {
     }
 
     @GetMapping
-    public List<TransacaoResponse> listar() {
-        return service.listar();
+    public List<TransacaoResponse> listar(@AuthenticationPrincipal Jwt jwt) {
+        return service.listar(usuarioId(jwt));
     }
 
     @GetMapping("/{id}")
-    public TransacaoResponse buscar(@PathVariable Long id) {
-        return service.buscar(id);
+    public TransacaoResponse buscar(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return service.buscar(usuarioId(jwt), id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TransacaoResponse criar(@Valid @RequestBody TransacaoRequest request) {
-        return service.criar(request);
+    public TransacaoResponse criar(@AuthenticationPrincipal Jwt jwt,
+                                   @Valid @RequestBody TransacaoRequest request) {
+        return service.criar(usuarioId(jwt), request);
     }
 
     @PutMapping("/{id}")
-    public TransacaoResponse atualizar(@PathVariable Long id, @Valid @RequestBody TransacaoRequest request) {
-        return service.atualizar(id, request);
+    public TransacaoResponse atualizar(@AuthenticationPrincipal Jwt jwt,
+                                       @PathVariable Long id,
+                                       @Valid @RequestBody TransacaoRequest request) {
+        return service.atualizar(usuarioId(jwt), id, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void remover(@PathVariable Long id) {
-        service.remover(id);
+    public void remover(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        service.remover(usuarioId(jwt), id);
+    }
+
+    private Long usuarioId(Jwt jwt) {
+        return Long.valueOf(jwt.getSubject());
     }
 }

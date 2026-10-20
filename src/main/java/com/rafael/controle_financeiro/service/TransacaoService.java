@@ -25,29 +25,29 @@ public class TransacaoService {
     }
 
     @Transactional(readOnly = true)
-    public List<TransacaoResponse> listar() {
-        return repository.findAll().stream()
+    public List<TransacaoResponse> listar(Long usuarioId) {
+        return repository.findByCategoriaUsuarioId(usuarioId).stream()
                 .map(TransacaoResponse::de)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public TransacaoResponse buscar(Long id) {
-        return TransacaoResponse.de(buscarEntidade(id));
+    public TransacaoResponse buscar(Long usuarioId, Long id) {
+        return TransacaoResponse.de(buscarEntidade(usuarioId, id));
     }
 
     @Transactional
-    public TransacaoResponse criar(TransacaoRequest request) {
-        Categoria categoria = validarCategoria(request);
+    public TransacaoResponse criar(Long usuarioId, TransacaoRequest request) {
+        Categoria categoria = validarCategoria(usuarioId, request);
         Transacao transacao = new Transacao(
                 request.descricao(), request.valor(), request.data(), request.tipo(), categoria);
         return TransacaoResponse.de(repository.save(transacao));
     }
 
     @Transactional
-    public TransacaoResponse atualizar(Long id, TransacaoRequest request) {
-        Transacao transacao = buscarEntidade(id);
-        Categoria categoria = validarCategoria(request);
+    public TransacaoResponse atualizar(Long usuarioId, Long id, TransacaoRequest request) {
+        Transacao transacao = buscarEntidade(usuarioId, id);
+        Categoria categoria = validarCategoria(usuarioId, request);
         transacao.setDescricao(request.descricao());
         transacao.setValor(request.valor());
         transacao.setData(request.data());
@@ -57,17 +57,17 @@ public class TransacaoService {
     }
 
     @Transactional
-    public void remover(Long id) {
-        repository.delete(buscarEntidade(id));
+    public void remover(Long usuarioId, Long id) {
+        repository.delete(buscarEntidade(usuarioId, id));
     }
 
-    private Transacao buscarEntidade(Long id) {
-        return repository.findById(id)
+    private Transacao buscarEntidade(Long usuarioId, Long id) {
+        return repository.findByIdAndCategoriaUsuarioId(id, usuarioId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Transação não encontrada: " + id));
     }
 
-    private Categoria validarCategoria(TransacaoRequest request) {
-        Categoria categoria = categoriaRepository.findById(request.categoriaId())
+    private Categoria validarCategoria(Long usuarioId, TransacaoRequest request) {
+        Categoria categoria = categoriaRepository.findByIdAndUsuarioId(request.categoriaId(), usuarioId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "Categoria não encontrada: " + request.categoriaId()));
         if (categoria.getTipo() != request.tipo()) {

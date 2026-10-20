@@ -18,11 +18,11 @@ public class SaldoService {
     }
 
     @Transactional(readOnly = true)
-    public SaldoResponse calcular() {
+    public SaldoResponse calcular(Long usuarioId) {
         BigDecimal receitas = BigDecimal.ZERO.setScale(2);
         BigDecimal despesas = BigDecimal.ZERO.setScale(2);
 
-        for (TransacaoRepository.TotalPorTipo total : repository.totaisPorTipo()) {
+        for (TransacaoRepository.TotalPorTipo total : repository.totaisPorTipo(usuarioId)) {
             if (total.getTipo() == TipoTransacao.RECEITA) {
                 receitas = total.getTotal();
             } else {
