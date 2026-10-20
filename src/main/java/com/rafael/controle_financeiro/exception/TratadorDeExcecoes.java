@@ -40,4 +40,9 @@ public class TratadorDeExcecoes {
         ErroResposta erro = new ErroResposta(400, ex.getMessage(), List.of());
         return ResponseEntity.badRequest().body(erro);
     }
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<ErroResposta> credenciaisInvalidas(CredenciaisInvalidasException ex) {
+        ErroResposta erro = new ErroResposta(401, ex.getMessage(), List.of());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(erro);
+    }
 }
