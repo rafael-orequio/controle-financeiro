@@ -4,9 +4,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -24,13 +27,18 @@ public class Categoria {
     @Column(nullable = false, length = 10)
     private TipoTransacao tipo;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
     protected Categoria() {
         // exigido pelo JPA
     }
 
-    public Categoria(String nome, TipoTransacao tipo) {
+    public Categoria(String nome, TipoTransacao tipo, Usuario usuario) {
         this.nome = nome;
         this.tipo = tipo;
+        this.usuario = usuario;
     }
 
     public Long getId() { return id; }
@@ -40,4 +48,6 @@ public class Categoria {
 
     public TipoTransacao getTipo() { return tipo; }
     public void setTipo(TipoTransacao tipo) { this.tipo = tipo; }
+
+    public Usuario getUsuario() { return usuario; }
 }
