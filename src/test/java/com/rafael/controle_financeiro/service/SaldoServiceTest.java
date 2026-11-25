@@ -1,9 +1,8 @@
-package com.rafael.controle_financeiro;
+package com.rafael.controle_financeiro.service;
 
 import com.rafael.controle_financeiro.dto.SaldoResponse;
 import com.rafael.controle_financeiro.model.TipoTransacao;
 import com.rafael.controle_financeiro.repository.TransacaoRepository;
-import com.rafael.controle_financeiro.service.SaldoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
