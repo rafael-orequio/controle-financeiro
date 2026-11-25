@@ -1,4 +1,4 @@
-package com.rafael.controle_financeiro.service;
+package com.rafael.controle_financeiro;
 
 import com.rafael.controle_financeiro.dto.CategoriaRequest;
 import com.rafael.controle_financeiro.dto.CategoriaResponse;
@@ -11,6 +11,7 @@ import com.rafael.controle_financeiro.model.Usuario;
 import com.rafael.controle_financeiro.repository.CategoriaRepository;
 import com.rafael.controle_financeiro.repository.TransacaoRepository;
 import com.rafael.controle_financeiro.repository.UsuarioRepository;
+import com.rafael.controle_financeiro.service.CategoriaService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
