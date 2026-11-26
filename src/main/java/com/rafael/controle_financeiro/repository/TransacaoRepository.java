@@ -2,7 +2,12 @@ package com.rafael.controle_financeiro.repository;
 
 import com.rafael.controle_financeiro.model.TipoTransacao;
 import com.rafael.controle_financeiro.model.Transacao;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -10,9 +15,12 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
+public interface TransacaoRepository
+        extends JpaRepository<Transacao, Long>, JpaSpecificationExecutor<Transacao> {
 
-    List<Transacao> findByCategoriaUsuarioId(Long usuarioId);
+    @Override
+    @EntityGraph(attributePaths = "categoria")
+    Page<Transacao> findAll(Specification<Transacao> spec, Pageable pageable);
 
     Optional<Transacao> findByIdAndCategoriaUsuarioId(Long id, Long usuarioId);
 

@@ -132,7 +132,86 @@ class ApiIntegracaoTest {
         assertThat(numero(saldoDaMaria, "totalDespesas")).isEqualByComparingTo("0.00");
         assertThat(numero(saldoDaMaria, "saldo")).isEqualByComparingTo("1000.00");
     }
+    @Test
+    @DisplayName("Lista transações com filtros e paginação")
+    void listaTransacoesComFiltrosEPaginacao() throws Exception {
+        String token = criarUsuarioELogar("Rafael");
+        String salario = criarCategoria(token, "Salario", "RECEITA");
+        String mercado = criarCategoria(token, "Mercado", "DESPESA");
 
+        criarTransacaoEm(token, "Salario outubro", "2500.00", "RECEITA", salario, "2026-10-05");
+        criarTransacaoEm(token, "Compras 1", "100.00", "DESPESA", mercado, "2026-10-07");
+        criarTransacaoEm(token, "Compras 2", "200.00", "DESPESA", mercado, "2026-10-20");
+        criarTransacaoEm(token, "Compras 3", "300.00", "DESPESA", mercado, "2026-11-03");
+
+        assertThat(totalElementos(listarTransacoes(token, ""))).isEqualTo(4);
+        assertThat(totalElementos(listarTransacoes(token, "?tipo=DESPESA"))).isEqualTo(3);
+        assertThat(totalElementos(listarTransacoes(token, "?categoriaId=" + salario))).isEqualTo(1);
+        assertThat(totalElementos(listarTransacoes(token, "?inicio=2026-10-01&fim=2026-10-31"))).isEqualTo(3);
+        assertThat(totalElementos(
+                listarTransacoes(token, "?tipo=DESPESA&inicio=2026-10-01&fim=2026-10-31"))).isEqualTo(2);
+
+        MvcResult primeiraPagina = listarTransacoes(token, "?tamanho=2&pagina=0");
+        assertThat(totalElementos(primeiraPagina)).isEqualTo(4);
+        assertThat(extrair(primeiraPagina, "\"totalPaginas\"\\s*:\\s*(\\d+)")).isEqualTo("2");
+        assertThat(quantidadeDeItens(primeiraPagina)).isEqualTo(2);
+
+        MvcResult maisRecente = listarTransacoes(token, "?tamanho=1&pagina=0");
+        assertThat(corpo(maisRecente)).contains("Compras 3");
+
+        mockMvc.perform(get("/transacoes?inicio=2026-10-31&fim=2026-10-01")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/transacoes?tipo=OUTRO")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("A listagem filtrada só mostra transações do próprio usuário")
+    void listagemFiltradaNaoMostraTransacoesDeOutroUsuario() throws Exception {
+        String tokenRafael = criarUsuarioELogar("Rafael");
+        String tokenMaria = criarUsuarioELogar("Maria");
+        String categoriaDoRafael = criarCategoria(tokenRafael, "Mercado", "DESPESA");
+        criarTransacaoEm(tokenRafael, "Compras", "100.00", "DESPESA", categoriaDoRafael, "2026-10-07");
+
+        assertThat(totalElementos(listarTransacoes(tokenRafael, "?tipo=DESPESA"))).isEqualTo(1);
+        assertThat(totalElementos(listarTransacoes(tokenMaria, "?tipo=DESPESA"))).isEqualTo(0);
+        assertThat(totalElementos(listarTransacoes(tokenMaria, "?categoriaId=" + categoriaDoRafael)))
+                .isEqualTo(0);
+    }
+    private void criarTransacaoEm(String token, String descricao, String valor,
+                                  String tipo, String categoriaId, String data) throws Exception {
+        String json = """
+                {"descricao": "%s", "valor": %s, "data": "%s", "tipo": "%s", "categoriaId": %s}
+                """.formatted(descricao, valor, data, tipo, categoriaId);
+        mockMvc.perform(post("/transacoes")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isCreated());
+    }
+
+    private MvcResult listarTransacoes(String token, String consulta) throws Exception {
+        return mockMvc.perform(get("/transacoes" + consulta)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andReturn();
+    }
+
+    private int totalElementos(MvcResult resultado) throws Exception {
+        return Integer.parseInt(extrair(resultado, "\"totalElementos\"\\s*:\\s*(\\d+)"));
+    }
+
+    private int quantidadeDeItens(MvcResult resultado) throws Exception {
+        Matcher encontrado = Pattern.compile("\"descricao\"").matcher(corpo(resultado));
+        int quantidade = 0;
+        while (encontrado.find()) {
+            quantidade++;
+        }
+        return quantidade;
+    }
     // ---------- Funções de apoio ----------
 
     private String novoEmail(String prefixo) {

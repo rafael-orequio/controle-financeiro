@@ -6,6 +6,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 
@@ -35,11 +36,19 @@ public class TratadorDeExcecoes {
         ErroResposta erro = new ErroResposta(400, "Corpo da requisição inválido", List.of());
         return ResponseEntity.badRequest().body(erro);
     }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErroResposta> parametroInvalido(MethodArgumentTypeMismatchException ex) {
+        ErroResposta erro = new ErroResposta(400, "Parâmetro inválido: " + ex.getName(), List.of());
+        return ResponseEntity.badRequest().body(erro);
+    }
+
     @ExceptionHandler(RegraDeNegocioException.class)
     public ResponseEntity<ErroResposta> regraDeNegocio(RegraDeNegocioException ex) {
         ErroResposta erro = new ErroResposta(400, ex.getMessage(), List.of());
         return ResponseEntity.badRequest().body(erro);
     }
+
     @ExceptionHandler(CredenciaisInvalidasException.class)
     public ResponseEntity<ErroResposta> credenciaisInvalidas(CredenciaisInvalidasException ex) {
         ErroResposta erro = new ErroResposta(401, ex.getMessage(), List.of());
