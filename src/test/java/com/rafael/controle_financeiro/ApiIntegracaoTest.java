@@ -252,6 +252,16 @@ class ApiIntegracaoTest {
         mockMvc.perform(get("/resumo-mensal"))
                 .andExpect(status().isUnauthorized());
     }
+    @Test
+    @DisplayName("A documentação OpenAPI é pública e descreve os endpoints")
+    void documentacaoOpenApiEPublica() throws Exception {
+        MvcResult documentacao = mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertThat(corpo(documentacao))
+                .contains("/auth/login", "/categorias", "/transacoes", "/saldo", "/resumo-mensal", "bearerAuth");
+    }
     // ---------- Funções de apoio ----------
     private MvcResult consultarResumo(String token, String consulta) throws Exception {
         return mockMvc.perform(get("/resumo-mensal" + consulta)
