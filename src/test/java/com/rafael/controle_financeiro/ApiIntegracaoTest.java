@@ -212,7 +212,60 @@ class ApiIntegracaoTest {
         }
         return quantidade;
     }
+    @Test
+    @DisplayName("Resumo mensal agrupa por categoria, respeita o mês e o usuário")
+    void resumoMensalAgrupaPorCategoria() throws Exception {
+        String tokenRafael = criarUsuarioELogar("Rafael");
+        String tokenMaria = criarUsuarioELogar("Maria");
+        String salario = criarCategoria(tokenRafael, "Salario", "RECEITA");
+        String mercado = criarCategoria(tokenRafael, "Mercado", "DESPESA");
+
+        criarTransacaoEm(tokenRafael, "Salario", "2500.00", "RECEITA", salario, "2026-10-05");
+        criarTransacaoEm(tokenRafael, "Compras 1", "100.00", "DESPESA", mercado, "2026-10-07");
+        criarTransacaoEm(tokenRafael, "Compras 2", "200.50", "DESPESA", mercado, "2026-10-20");
+        criarTransacaoEm(tokenRafael, "Compras 3", "300.00", "DESPESA", mercado, "2026-11-03");
+
+        MvcResult outubro = consultarResumo(tokenRafael, "?ano=2026&mes=10");
+        assertThat(valorDaCategoria(outubro, "Mercado", "total")).isEqualByComparingTo("300.50");
+        assertThat(valorDaCategoria(outubro, "Mercado", "quantidade")).isEqualByComparingTo("2");
+        assertThat(valorDaCategoria(outubro, "Salario", "total")).isEqualByComparingTo("2500.00");
+        assertThat(valorDaCategoria(outubro, "Salario", "quantidade")).isEqualByComparingTo("1");
+
+        MvcResult novembro = consultarResumo(tokenRafael, "?ano=2026&mes=11");
+        assertThat(valorDaCategoria(novembro, "Mercado", "total")).isEqualByComparingTo("300.00");
+        assertThat(corpo(novembro)).doesNotContain("Salario");
+
+        MvcResult dezembro = consultarResumo(tokenRafael, "?ano=2026&mes=12");
+        assertThat(corpo(dezembro)).containsPattern("\"categorias\"\\s*:\\s*\\[\\s*\\]");
+
+        MvcResult resumoDaMaria = consultarResumo(tokenMaria, "?ano=2026&mes=10");
+        assertThat(corpo(resumoDaMaria)).containsPattern("\"categorias\"\\s*:\\s*\\[\\s*\\]");
+
+        mockMvc.perform(get("/resumo-mensal?ano=2026&mes=13")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(tokenRafael)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/resumo-mensal?ano=abc")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(tokenRafael)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/resumo-mensal"))
+                .andExpect(status().isUnauthorized());
+    }
     // ---------- Funções de apoio ----------
+    private MvcResult consultarResumo(String token, String consulta) throws Exception {
+        return mockMvc.perform(get("/resumo-mensal" + consulta)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andReturn();
+    }
+
+    private BigDecimal valorDaCategoria(MvcResult resultado, String nomeCategoria, String campo)
+            throws Exception {
+        String regex = "\"categoriaNome\"\\s*:\\s*\"" + nomeCategoria + "\"[^}]*\"" + campo
+                + "\"\\s*:\\s*([0-9.]+)";
+        return new BigDecimal(extrair(resultado, regex));
+    }
 
     private String novoEmail(String prefixo) {
         return prefixo + "-" + UUID.randomUUID() + "@exemplo.com";

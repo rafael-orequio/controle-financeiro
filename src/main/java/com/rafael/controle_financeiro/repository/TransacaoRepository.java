@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,9 +35,36 @@ public interface TransacaoRepository
             """)
     List<TotalPorTipo> totaisPorTipo(@Param("usuarioId") Long usuarioId);
 
+    @Query("""
+            select c.id as categoriaId, c.nome as categoriaNome, t.tipo as tipo,
+                   sum(t.valor) as total, count(t) as quantidade
+            from Transacao t
+            join t.categoria c
+            where c.usuario.id = :usuarioId
+              and t.data >= :inicio
+              and t.data <= :fim
+            group by c.id, c.nome, t.tipo
+            order by sum(t.valor) desc
+            """)
+    List<ResumoPorCategoria> resumoPorCategoria(@Param("usuarioId") Long usuarioId,
+                                                @Param("inicio") LocalDate inicio,
+                                                @Param("fim") LocalDate fim);
+
     interface TotalPorTipo {
         TipoTransacao getTipo();
 
         BigDecimal getTotal();
+    }
+
+    interface ResumoPorCategoria {
+        Long getCategoriaId();
+
+        String getCategoriaNome();
+
+        TipoTransacao getTipo();
+
+        BigDecimal getTotal();
+
+        Long getQuantidade();
     }
 }
