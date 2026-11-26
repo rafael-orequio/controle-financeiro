@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:17
+    container_name: controle-financeiro-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-controle_financeiro}
+      POSTGRES_USER: ${DB_USER:-controle}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-controle}
+    ports:
+      - "5432:5432"
+    volumes:
+      - dados-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-controle} -d ${DB_NAME:-controle_financeiro}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: controle-financeiro-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-controle_financeiro}
+      DB_USER: ${DB_USER:-controle}
+      DB_PASSWORD: ${DB_PASSWORD:-controle}
+      JWT_SECRET: ${JWT_SECRET:-chave-apenas-para-desenvolvimento-troque-em-producao-123}
+    ports:
+      - "8080:8080"
+
+volumes:
+  dados-postgres:
